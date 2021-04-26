@@ -1,0 +1,67 @@
+version: '3'
+ 
+services:
+  app:
+    container_name: backend-coinMena
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    command: >
+      sh -c "python3 manage.py makemigrations &&
+             python3 manage.py migrate &&
+             python3 manage.py runserver 0.0.0.0:8000"
+ 
+    env_file:
+      - ./.env.dev
+    stdin_open: true
+    tty: true
+    depends_on:
+      - db
+ 
+  db:
+    container_name: db-coinMena
+    image: postgres:10-alpine
+    env_file:
+      - ./.env.dev
+    volumes: 
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    container_name: redis-coinMena
+    image: redis:alpine
+
+  celery:
+    container_name: celery-coinMena
+    restart: unless-stopped
+    build:
+      context: .
+    command: celery -A coinMena worker -l info
+    volumes:
+      - ./:/app
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+      - redis
+      - app
+
+  celery-beat:
+    container_name: celery-beat-coinMena
+    restart: unless-stopped
+    build: .
+    command: celery -A coinMena beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./:/app
+    env_file:
+        - ./.env.dev
+    depends_on:
+      - db
+      - redis
+      - celery
+  
+
+volumes:
+  pgdata:
