@@ -133,9 +133,12 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 CELERY_BEAT_SCHEDULE = {
     'queue_every_five_mins': {
-        'task': 'market.tasks.query_every_five_mins',
-        'schedule': crontab(minute=5),
+        'task': 'market.tasks.fetch_exchange_every_hour',
+        'schedule': crontab(minute=0, hour='*/1'),
     },
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+API_KEY = os.environ['API_KEY']
+EXCHANGE_BTC_USD_URL = os.environ['EXCHANGE_BTC_USD_URL']

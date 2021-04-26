@@ -6,3 +6,4 @@ python-dotenv
 django-celery-beat
 django-cors-headers
 djangorestframework
+requests

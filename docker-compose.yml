@@ -10,8 +10,7 @@ services:
     volumes:
       - ./:/app
     command: >
-      sh -c "python3 manage.py makemigrations &&
-             python3 manage.py migrate &&
+      sh -c "python3 manage.py migrate &&
              python3 manage.py runserver 0.0.0.0:8000"
  
     env_file:
@@ -35,7 +34,7 @@ services:
 
   celery:
     container_name: celery-coinMena
-    restart: unless-stopped
+    restart: always
     build:
       context: .
     command: celery -A coinMena worker -l info
