@@ -34,7 +34,11 @@ def fetch_exchange_every_hour():
             currency_obj = currency_filter[0]
 
         currency_obj.rate.add(rate_obj)
+        response = True
     else:
         error = res.json()
+        response = False
         print(f'#### Data fetch failed with status: {res.status_code} && with reason {error} ####')
+
     print('#### Ending hourly scheduled task to fetch BTC/USD exchange rate ####')
+    return response

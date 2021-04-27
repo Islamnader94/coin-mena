@@ -1,25 +1,29 @@
 import json
 import requests
 from django.http import JsonResponse
-from .models import Rate, Currency
-from .serializers import RateSerializer, CurrencySerializer
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from django.conf import settings
-
-
-API_KEY = settings.API_KEY
-EXCHANGE_BTC_USD_URL = settings.EXCHANGE_BTC_USD_URL
+from market import tasks, models, serializers
 
 
 class QuotesView(APIView):
 
     def get(self, request):
         try:
-            currency = Currency.objects.all()
-            currency_serializer = CurrencySerializer(currency, many=True)
+            rate_data = {
+                "exchange_rate": "",
+                "date_time": ""
+            }
+            currency = models.Currency.objects.all()
+            currency_serializer = serializers.CurrencySerializer(currency, many=True)
             response = currency_serializer.data
+
+            rate = currency[0].rate.last()
+            rate_data['exchange_rate'] = rate.exchange_rate
+            rate_data['date_time'] = rate.date
+            response[0]['rate'] = rate_data
             return JsonResponse(
                 response,
                 safe=False,
@@ -39,15 +43,12 @@ class QuotesView(APIView):
 
     def post(self, request):
         try:
-            user_name = request.data['user_name']
-            user_password = request.data['password']
-            user = authenticate(username=user_name, password=user_password)
-            if user is not None:
-                data = {'authenticated': True}
+            resp_status = tasks.fetch_exchange_every_hour()
+            if resp_status:
                 return JsonResponse(
-                    data,
+                    {"message": "updated successfully"},
                     safe=False,
-                    status=status.HTTP_200_OK)
+                    status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as e:
             return JsonResponse(
